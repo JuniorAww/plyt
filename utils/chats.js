@@ -1,5 +1,3 @@
-
-
 export const isAdmin = (ctx, chatId = null) => {
    return new Promise((resolve, reject) => {
        ctx.telegram.getChatMember(chatId ?? ctx.chat.id, ctx.from.id).then((user) => {
