@@ -1,4 +1,5 @@
 import Module from '../module.js'
+import { isAdmin } from '../utils/chats.js'
 
 class LevelsModule extends Module {
     description = "Уровни в чатах"
@@ -15,12 +16,37 @@ class LevelsModule extends Module {
     
     async onMessage(ctx, next) {
         if (ctx.text === '/me') {
-            const { level: Level } = await ctx.getUser();
-            const [ level, exp_left, exp_total ] = Level;
+            if (ctx.chat.id > 0) return await ctx.reply(`❌ Команда доступна <b>в чатах!</b>`);
+            
+            const chat = await ctx.getInfo();
+console.log(chat.levels)
+            const levelInfo = chat.levels?.[ctx.from.id] || [ 0, 50, 0 ];
+            const [ level, exp_left, exp_total ] = levelInfo;
             
             const text = `${ctx.from.first_name}, у вас <b>уровень ${toRoman(level + 1)}</b>\n⚡ Осталось <b>${exp_left.toFixed(1)} EXP</b> до нового уровня!`
             
             return await ctx.reply(text)
+        }
+        else if (ctx.text === '/me reset') {
+            if (ctx.chat.id > 0) return await ctx.reply(`❌ Команда доступна <b>в чатах!</b>`);
+            
+            const chat = await ctx.getInfo();
+            
+            if (chat.levels) {
+                chat.levels[ctx.from.id] = [ 0, 0, 0 ]
+                await ctx.reply("Сброшено!")
+            }
+        }
+        else if (ctx.text === '/me resetall') {
+            if (ctx.chat.id > 0) return await ctx.reply(`❌ Команда доступна <b>в чатах!</b>`);
+            if (!await isAdmin(ctx)) return;
+            
+            const chat = await ctx.getInfo();
+            
+            if (chat.levels) {
+                delete chat.levels;
+                await ctx.reply("Сброшено!")
+            }
         }
         
         next()
@@ -34,7 +60,13 @@ class LevelsModule extends Module {
 /* ================== */
 
 async function addExp(ctx) {
-    const { level } = await ctx.getUser();
+    const chat = await ctx.getInfo();
+    if (!chat.levels) chat.levels = {};
+    
+    const uid = +ctx.from.id;
+    if (!chat.levels[uid]) chat.levels[uid] = [ 0, 50, 0 ];
+    const level = chat.levels[uid];
+    
     let givenExp = 0;
     
     if (ctx.text) {

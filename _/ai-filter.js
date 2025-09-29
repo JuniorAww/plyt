@@ -22,67 +22,68 @@ class AIFilterModule extends Module {
     async onMessage(ctx, next) {
         if (ctx.chat.id < 0) {
             const chat = await ctx.getInfo();
-            if (ctx?.text?.match(/^\/камчас$/)) {
-                if (!await isAdmin(ctx)) return;
-                
-                const enabled = !chat.moderate?.enabled;
-                
-                chat.moderate = {
-                    enabled,
-                    schedule: chat.moderate?.schedule,
-                }
-                
-                /* Ставим метку, чтобы если включен автокамчас, он не отреагировал */
-                const currentHour = new Date().getUTCHours() + 3;
-                const currentDate = new Date().getUTCDate();
-                if (enabled && chat.moderate.schedule[0] === currentHour) 
-                    chat.moderate._ed = currentDate;
-                else if (!enabled && chat.moderate.schedule[1] === currentHour) 
-                    chat.moderate._dd = currentDate;
-                
-                if (chat.moderate) {
-                    await ctx.reply("✅ <b>Коммендатский час</b> активирован")
-                }
-                else await ctx.reply("❌ <b>Коммендатский час</b> деактивирован")
-                
-                return;
-            }
-            else if (ctx?.text?.match(/^\/автокамчас(.*)$/)) {
-                if (!await isAdmin(ctx)) return;
-                
-                const [ _, _from, _to ] = ctx.text.split(' ')
-                
-                if (_from) {
-                    const from = parseInt(_from);
-                    const to = parseInt(_to);
-                    if (isNaN(from) || isNaN(to)) 
-                        return await ctx.reply(`<b>Использование:</b>\n/автокамчас <b>22 10</b> (<b>22</b>:00 по МСК = начало, <b>10</b>:00 по МСК = конец)`)
-                    
-                    chat.moderate = {
-                        enabled: true,
-                        schedule: [ from, to ]
-                    }
-                    
-                    await ctx.reply("✅ <b>Коммендатский час</b> будет включаться с "
-                                      + `${from}:00 до ${to}:00 по МСК`)
-                    }
-                else {
-                    if (!chat.moderate.schedule)
-                        return await ctx.reply("❌ <b>Коммендантский час</b> уже отключен!\nЕсли хотите включить: /автокамчас <b>22 10</b> (<b>22</b>:00 по МСК = начало, <b>10</b>:00 по МСК = конец)");
-                    
-                    chat.moderate = {
-                        enabled: chat.moderate?.enabled,
-                        schedule: undefined
-                    }
-                    
-                    await ctx.reply("❌ <b>Коммендатский час</b> не будет включаться автоматически")
-                }
-                
-                return;
-            }
+            if (ctx?.text?.match(/^\/кч(.*)$/)) return await handleSwitchCommand(ctx)
         }
         next()
     }
+}
+
+const sendTempMessage = async (ctx, seconds, text) => {
+    try {
+        const { message_id } = await ctx.reply(text + `\n<i>Удаление через ${seconds} секунды...</i>`);
+        await new Promise(r => setTimeout(r, seconds * 1000));
+        await ctx.telegram.deleteMessage(ctx.chat.id, message_id);
+    } catch (e) {
+        console.log(e)
+    }
+}
+
+const handleSwitchCommand = async ctx => {
+    if (!await isAdmin(ctx)) return;
+    const chat = await ctx.getInfo();
+      
+    const [ _, _from, _to ] = ctx.text.split(' ')
+    
+    if (_from) {
+        const from = parseInt(_from);
+        const to = parseInt(_to);
+        if (isNaN(from) || isNaN(to)) {
+            return sendTempMessage(ctx, 3, `<b>Если хотите задать время, то надо так:</b>\n/комчас <b>22 10</b> (<b>22</b>:00 по МСК = начало, <b>10</b>:00 по МСК = конец)`);
+        }
+        
+        chat.moderate = {
+            enabled: true,
+            schedule: [ from, to ]
+        }
+        
+        return sendTempMessage(ctx, 3, "✅ <b>Коммендатский час</b> будет включён с "
+                          + `${from}:00 до ${to}:00 по МСК`)
+    }
+    
+    if (!chat.moderate) chat.moderate = {};
+    const enabled = !chat.moderate.enabled;
+    
+    chat.moderate = {
+        enabled,
+        schedule: enabled ? chat.moderate.schedule : undefined,
+        _ed: chat.moderate._ed,
+        _dd: chat.moderate._dd,
+    }
+    
+    /* Ставим метку, чтобы если включен камчас, он не отреагировал */
+    if (chat.moderate.schedule) {
+        const currentHour = new Date().getUTCHours() + 3;
+        const currentDate = new Date().getUTCDate();
+        if (enabled && chat.moderate.schedule[0] === currentHour) 
+            chat.moderate._ed = currentDate;
+        else if (!enabled && chat.moderate.schedule[1] === currentHour) 
+            chat.moderate._dd = currentDate;
+    }
+    
+    if (chat.moderate.enabled) {
+        sendTempMessage(ctx, 3, "✅ <b>Коммендатский час</b> активирован")
+    }
+    else sendTempMessage(ctx, 3, "❌ <b>Коммендатский час</b> деактивирован")
 }
 
 const handleSchedules = async () => {
@@ -127,18 +128,14 @@ let warningTimeout = {}
 const processPhoto = async (ctx, href) => {
     const chat = ctx.chat.id;
     
-    if (queue[chat] > 10) {
-        try {
-            await ctx.deleteMessage()
-        } catch (e) {}
-        
+    if (queue[chat] > 20) {
         return;
     }
     
     const msg = ctx.message.message_id;
     
-    if (!queue[chat]) queue[chat] = [];
-    queue[chat].push(msg);
+    if (!queue[chat]) queue[chat] = 1;
+    else queue[chat] += 1;
     
     console.log("Проверка в " + ctx.chat.title + " фото " + href);
     let deleted = false;
@@ -161,7 +158,7 @@ const processPhoto = async (ctx, href) => {
         if (error) throw error;
         console.log(result)
         
-        if (result.explicit > 0.1 || result.questionable > 0.1) {
+        if (result.explicit > 0.75) {
             try {
                 deleted = true;
                 await ctx.deleteMessage()
@@ -170,7 +167,7 @@ const processPhoto = async (ctx, href) => {
     } catch (e) {
         console.log(e)
     } finally {
-        queue[chat].splice(queue[chat].indexOf(msg), 1)
+        queue[chat] -= 1;
         
         if (deleted) {
             if (warningTimeout[chat] !== undefined) {
@@ -179,7 +176,7 @@ const processPhoto = async (ctx, href) => {
             
             warningTimeout[chat] = setTimeout(async () => {
                 warningTimeout[chat] = undefined;
-                try { await ctx.reply(`${ctx.from.first_name}, не будьте врагом народа, соблюдайте коммендантский час!`) } catch (e) {}
+                try { await ctx.reply(`${ctx.from.first_name} простите, но сейчас некоторые фото фильтруются!`) } catch (e) {}
             }, 2000)
         }
     }
