@@ -15,25 +15,25 @@ class AITalkingModule extends Module {
             
             if (chat.talk?.enabled) {
                 if (chat.talk.messages.length >= 8) chat.talk.messages.splice(0, 1)
+                const appeal = ctx.text ? regex().test(ctx.text) : false;
                 
-                const msgContent = getContent(ctx);
+                let msgContent = getContent(ctx);
+                if (appeal) msgContent = msgContent.replace(regex(), '')
+                
                 const name = ctx.from.first_name + (ctx.from.last_name ? (" " + ctx.from.last_name) : "");
                 const from = name.length ? name : "безымянный"
                 const content = `${from}: ${msgContent}`
                 chat.talk.messages.push({ role: 'user', content })
                 
-                const text = ctx.text;
-                if (text) {
-                    if (regex().test(text)) {
-                        if (!generating) {
-                            const message = await getResponse(ctx, chat.talk)
-                            if (message && message.content.length) {
-                                if (chat.talk) {
-                                    if (chat.talk.messages.length >= 8) chat.talk.messages.splice(0, 1)
-                                    chat.talk.messages.push({ role: 'system', content: message.content })
-                                }
-                                await ctx.reply(message.content);
+                if (appeal) {
+                    if (ctx.text[0] !== '/' && !generating) {
+                        const message = await getResponse(ctx, chat.talk)
+                        if (message && message.content.length) {
+                            if (chat.talk) {
+                                if (chat.talk.messages.length >= 8) chat.talk.messages.splice(0, 1)
+                                chat.talk.messages.push({ role: 'system', content: message.content })
                             }
+                            return await ctx.reply(message.content);
                         }
                     }
                 }
@@ -50,8 +50,7 @@ class AITalkingModule extends Module {
 
 let currentRegex;
 const regex = () => {
-    console.log(bot.me)
-    if (!currentRegex) currentRegex = new RegExp(`@${bot.me}\\b|(^|\\s)плут(\\s|$)`, 'i');
+    if (!currentRegex) currentRegex = new RegExp(`@${bot.botInfo.username}\\b|(^|\\s)плут(\\s|$)`, 'i');
     return currentRegex;
 }
 
@@ -95,14 +94,14 @@ const handleTalkerCommand = async (ctx) => {
 let generating = false;
 
 const getContent = ctx => {
-    console.log(Object.keys(ctx.update))
-    if (ctx.text) return ctx.text.length > 200 ? ctx.text.slice(0, 200) : ctx.text;
-    else if (ctx.sticker) return "[стикер, который ты не сможешь увидеть]"
-    else if (ctx.video) return "[видео, которое ты не сможешь посмотреть]"
-    else if (ctx.photo) return "[фото, которое ты не сможешь увидеть]"
-    else if (ctx.document) return "[файл, который ты не сможешь смотреть]"
-    else if (ctx.voice) return "[голосовое сообщение, который ты не сможешь смотреть]"
-    else if (ctx.audio) return "[файл музыки, который ты не сможешь услышать]"
+    const cnt = ctx.update.message;
+    if (cnt.text) return ctx.text.length > 200 ? ctx.text.slice(0, 200) : ctx.text;
+    else if (cnt.sticker) return "[стикер, который ты не сможешь увидеть]"
+    else if (cnt.video) return "[видео, которое ты не сможешь посмотреть]"
+    else if (cnt.photo) return "[фото, которое ты не сможешь увидеть]"
+    else if (cnt.document) return "[файл, который ты не сможешь смотреть]"
+    else if (cnt.voice) return "[голосовое сообщение, который ты не сможешь смотреть]"
+    else if (cnt.audio) return "[файл музыки, который ты не сможешь услышать]"
     else return "[сообщение, которое ты не сможешь понять]"
 }
 

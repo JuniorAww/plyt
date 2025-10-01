@@ -56,7 +56,7 @@ function init(handler_name, property_name, module) {
         if (handler_name === 'start') {
             /* Для команды /start особый обработчик */
             bot.on('text', (c,n) => 
-                /^\/start(.*)/.test(c.message.text) ? module[property_name](c,n) : n(c,n))
+                /^\/start(.*)/.test(c.message.text) && c.chat.id > 0 ? module[property_name](c,n) : n(c,n))
             console.log(`+ Handler onStart by ${module.constructor.name}`)
         }
         else if (handler_name === 'all') {

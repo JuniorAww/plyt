@@ -3,7 +3,7 @@ import Module from '../module.js'
 
 class StartModule extends Module {
     description = "Типичный ответ на /start"
-    priority = 100
+    priority = 90
     
     async onStart(ctx, next) {
         if (!startStickers.values) await retrieveStickers(ctx)
