@@ -3,6 +3,7 @@ import Module from '../module.js'
 import { chats, users } from '../utils/data.js'
 import { getMember, isAdmin } from '../utils/chats.js'
 import handleCallback from './forms-cb.jsx'
+import { bot } from '../index.js'
 
 class FormsModule extends Module {
     description = "Заявки (анкеты) в чаты с голосованием"
@@ -18,6 +19,7 @@ class FormsModule extends Module {
         
         const { state } = user;
         if (state) {
+            if (ctx.chat.id < 0) return; // fix
             if (state.type === 'invite') return await handleFormText(ctx, user);
             else if (state.type === 'decline') return await handleFormDecline(ctx, user);
         }
@@ -45,13 +47,13 @@ class FormsModule extends Module {
 /* Команда /link */
 /* ============= */
 async function sendFormLink(ctx) {
-    if (ctx.chat.id > 0) return await ctx.reply("Команду можно использовать в чатах")
+    if (ctx.chat.id > 0) return await ctx.reply("Команда доступна <b>в чатах!</b>")
     
     const chat = await ctx.getInfo()
     chat.linkEnabled = true;
     console.log(chat)
     
-    const url = "https://t.me/plytbot?start=" + ctx.chat.id
+    const url = "https://t.me/" + bot.botInfo.username + "?start=" + ctx.chat.id
     return ctx.reply(`💦 <b><a href="${url}">Ссылка на чат</a></b>`
                   + `\nПо этой ссылке принимаются <b>анкеты</b> на рассмотрение участниками чата ${ctx.chat.title}`)
 }
@@ -164,7 +166,7 @@ async function handleFormText(ctx, user) {
     
     const index = chat.essays.indexOf(essay);
     
-    const url = `https://t.me/plytbot?start=0${(chat.id + "").slice(1)}-${index}`
+    const url = `https://t.me/${bot.botInfo.username}?start=0${(chat.id + "").slice(1)}-${index}`
     console.log(url, chat.id)
     
     const req = `🧡 <b>Новый запрос на вступление</b>\nАвтор: <i>${ctx.from.first_name}</i>\n<a href="${url}">Прочитать анкету</a>`

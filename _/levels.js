@@ -1,13 +1,14 @@
 import Module from '../module.js'
 import { isAdmin } from '../utils/chats.js'
+import { bot } from '../index.js'
 
 class LevelsModule extends Module {
     description = "Уровни в чатах"
-    priority = 50
+    priority = 100
     
     async onEverything(ctx, next) {
         
-        if (ctx.chat.id < 0) {
+        if (ctx.chat.id < 0 && (!ctx.text || ctx.text[0] !== '/')) {
             await addExp(ctx)
         }
         
@@ -15,41 +16,47 @@ class LevelsModule extends Module {
     }
     
     async onMessage(ctx, next) {
-        if (ctx.text === '/me') {
-            if (ctx.chat.id > 0) return await ctx.reply(`❌ Команда доступна <b>в чатах!</b>`);
-            
-            const chat = await ctx.getInfo();
-console.log(chat.levels)
-            const levelInfo = chat.levels?.[ctx.from.id] || [ 0, 50, 0 ];
-            const [ level, exp_left, exp_total ] = levelInfo;
-            
-            const text = `${ctx.from.first_name}, у вас <b>уровень ${toRoman(level + 1)}</b>\n⚡ Осталось <b>${exp_left.toFixed(1)} EXP</b> до нового уровня!`
-            
-            return await ctx.reply(text)
-        }
-        else if (ctx.text === '/me reset') {
-            if (ctx.chat.id > 0) return await ctx.reply(`❌ Команда доступна <b>в чатах!</b>`);
-            
-            const chat = await ctx.getInfo();
-            
-            if (chat.levels) {
-                chat.levels[ctx.from.id] = [ 0, 0, 0 ]
-                await ctx.reply("Сброшено!")
-            }
-        }
-        else if (ctx.text === '/me resetall') {
-            if (ctx.chat.id > 0) return await ctx.reply(`❌ Команда доступна <b>в чатах!</b>`);
-            if (!await isAdmin(ctx)) return;
-            
-            const chat = await ctx.getInfo();
-            
-            if (chat.levels) {
-                delete chat.levels;
-                await ctx.reply("Сброшено!")
-            }
-        }
+        if (ctx.text === '/me' || ctx.text === ('/me@' + bot.botInfo.username)) return await handleMe(ctx)
+        else if (ctx.text === '/me reset') return await reset(ctx);
+        else if (ctx.text === '/me resetall') return await resetAll(ctx);
         
         next()
+    }
+}
+
+const handleMe = async ctx => {
+    if (ctx.chat.id > 0) return await ctx.reply(`❌ Команда доступна <b>в чатах!</b>`);
+    
+    const chat = await ctx.getInfo();
+  
+    const levelInfo = chat.levels?.[ctx.from.id] || [ 0, 50, 0 ];
+    const [ level, exp_left, exp_total ] = levelInfo;
+    
+    const text = `${ctx.from.first_name}, у вас <b>уровень ${toRoman(level + 1)}</b> (<b>${exp_left.toFixed(1)} EXP</b> до след. уровня!)`
+    
+    return await ctx.reply(text)
+}
+
+const reset = async ctx => {
+    if (ctx.chat.id > 0) return await ctx.reply(`❌ Команда доступна <b>в чатах!</b>`);
+    
+    const chat = await ctx.getInfo();
+    
+    if (chat.levels) {
+        delete chat.levels[ctx.from.id];
+        await ctx.reply("Сброшено!")
+    }
+}
+
+const resetAll = async ctx => {
+    if (ctx.chat.id > 0) return await ctx.reply(`❌ Команда доступна <b>в чатах!</b>`);
+    if (!await isAdmin(ctx)) return;
+    
+    const chat = await ctx.getInfo();
+    
+    if (chat.levels) {
+        delete chat.levels;
+        await ctx.reply("Сброшено!")
     }
 }
 
