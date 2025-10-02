@@ -27,9 +27,9 @@ const init = () => {
     const now = Date.now()
     
     setTimeout(() => {
-        setInterval(newLogFile(), PERIOD)
+        setInterval(newLogFile, PERIOD)
         newLogFile();
-    }, PERIOD - (now % PERIOD))
+    }, PERIOD - (now % PERIOD) + 1000)
     
     newLogFile();
 }
