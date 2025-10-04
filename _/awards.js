@@ -41,32 +41,36 @@ const handleAward = async ctx => {
     
     await ctx.react({ type: "emoji", emoji: "👍" });
     
-    const result = await query({
-        response_format: "b64_json",
-        prompt: "\"Award " + prompt + "\"",
-        model: "stabilityai/stable-diffusion-xl-base-1.0"
-    })
-    
-    const b64image = result.data[0].b64_json;
-    const buffer = Buffer.from(b64image, "base64");
-    
-    const caption = `${reply.first_name}, вы получили <b>награду!</b>`
-                  + `\nОна будет сохранена в вашем профиле`
-                  + `\n<i>Изображение сгенерировано: stable-diffusion-xl-base-1.0</i>`
-    const message = await ctx.replyWithPhoto({ source: buffer }, { caption, parse_mode: 'HTML' });
-    const fileId = message.photo[message.photo.length - 1].file_id;
-    
-    if (!user.awards) user.awards = { list: [] }
-    user.awards.list.push({
-        chat: ctx.chat.id,
-        _chat: ctx.chat.title,
-        fileId,
-        name: null,
-        description: null
-    })
-    
-    generation_delay = Date.now() + 10 * 1000;
-    generating_for = null;
+    try {
+        const result = await query({
+            response_format: "b64_json",
+            prompt: "\"Award " + prompt + "\"",
+            model: "stabilityai/stable-diffusion-xl-base-1.0"
+        })
+        
+        const b64image = result.data[0].b64_json;
+        const buffer = Buffer.from(b64image, "base64");
+        
+        const caption = `${reply.first_name}, вы получили <b>награду!</b>`
+                      + `\nОна будет сохранена в вашем профиле`
+                      + `\n<i>Изображение сгенерировано: stable-diffusion-xl-base-1.0</i>`
+        const message = await ctx.replyWithPhoto({ source: buffer }, { caption, parse_mode: 'HTML' });
+        const fileId = message.photo[message.photo.length - 1].file_id;
+        
+        if (!user.awards) user.awards = { list: [] }
+        user.awards.list.push({
+            chat: ctx.chat.id,
+            _chat: ctx.chat.title,
+            fileId,
+            name: null,
+            description: null
+        })
+    } catch (e) {
+        console.log(e)
+    } finally {
+        generation_delay = Date.now() + 10 * 1000;
+        generating_for = null;
+    }
 }
 
 async function query(data) {
