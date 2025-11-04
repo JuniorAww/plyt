@@ -13,6 +13,7 @@ class AITalkingModule extends Module {
     priority = 75
     
     async onMessage(ctx, next) {
+        next(); return;
         if (ctx.chat.id > 0) {
             const chat = await ctx.getInfo();
             
@@ -145,7 +146,7 @@ const handleTrainerCommand = async (ctx) => {
 }
 
 const getResponse = async (ctx, prompt) => {
-    const response = await fetch("http://localhost:11434/api/generate", {
+    const response = await fetch("http://ollama:11434/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: 

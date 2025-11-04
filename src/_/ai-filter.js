@@ -8,6 +8,8 @@ class AIFilterModule extends Module {
     priority = 1
     
     async onPhoto(ctx, next) {
+        next(); return; // DISABLED
+        
         if (ctx.chat.id < 0) {
             const chat = await ctx.getInfo()
             

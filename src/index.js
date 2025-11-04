@@ -74,8 +74,8 @@ function init(handler_name, property_name, module) {
 }
 
 /* Завершение Windows без ошибок ✔✔✔ */
-const gracefulStop = async () => { await bot.stop(); process.exit(0) }
+/*const gracefulStop = async () => { await bot.stop(); process.exit(0) }
 process.once('SIGINT', gracefulStop)
-process.once('SIGTERM', gracefulStop)
+process.once('SIGTERM', gracefulStop)*/
 
 export { bot };

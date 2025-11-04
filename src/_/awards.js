@@ -8,6 +8,8 @@ class AwardsModule extends Module {
     priority = 75
     
     async onMessage(ctx, next) {
+        next(); return; // DISABLED
+        
         if (/^\/award (.*)/.test(ctx.text)) return await handleAward(ctx)
         next();
     }

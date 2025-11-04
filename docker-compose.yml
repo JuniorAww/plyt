@@ -1,0 +1,34 @@
+
+services:
+  ollama:
+    image: alpine/ollama:0.12.9
+    container_name: ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+  
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: plut-bot
+    depends_on:
+      - ollama
+    volumes:
+      - plut_db:/app/data
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+    command: >
+      sh -c "echo '0 0 * * * docker restart plut-bot' | crontab - &&
+             cron &&
+             bun run start"
+
+volumes:
+  plut_db:
+  ollama_data:
+

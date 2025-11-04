@@ -118,14 +118,13 @@ const getResponse = async (ctx, entry) => {
         },
         ...entry.messages,
     ];
-    console.log(messages)
     
-    const resp = await fetch("http://localhost:11434/api/chat", {
+    const resp = await fetch("http://ollama:11434/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: 
             JSON.stringify({
-                model: "gemma3:12b",
+                model: "gemma2:9b",
                 messages,
                 num_predict: 64,
                 stream: false,
