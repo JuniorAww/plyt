@@ -27,6 +27,10 @@ class Users extends Data {
             save()
         }
         
+        const CHAT = ctx.chat.id;
+        if (CHAT < 0 && !this.data[id].groups[CHAT]) 
+            this.data[id].groups[CHAT] = true;
+        
         const user = this.data[id];
         return this.data[id];
     }

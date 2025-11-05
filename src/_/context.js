@@ -10,10 +10,23 @@ class ContextModule extends Module {
         ctx.getUser = () => _getUser(ctx);
         ctx.getInfo = () => _getChat(ctx);
         
-        ctx.reply = (text, params) => ctx.sendMessage(text, { parse_mode: 'HTML', ...params })
+        ctx.reply = reply.bind(ctx);
+        ctx.consider = consider.bind(ctx);
         
         next();
     }
+}
+
+async function reply(text, params) {
+    return await this.sendMessage(text, { parse_mode: 'HTML', ...params })
+}
+
+async function consider(update, text, params) {
+    console.log(update, this.chat.id, this.update?.callback_query?.message)
+    try {
+        if (update) await this.telegram.editMessageText(this.chat.id, this.update.callback_query.message.message_id, undefined, text, { parse_mode: 'HTML', ...params})
+        else await this.reply(text, params)
+    } catch (e) { console.error(e) }
 }
 
 async function _getUser(ctx) {

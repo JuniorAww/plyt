@@ -44,6 +44,7 @@ modules.forEach(module => {
 
 bot.launch()
 console.log('\x1b[0m✔ Успешно!\n✔ Бот инициализирован')
+bot.telegram.getMe().then(r => console.log("Бот @" + r.first_name));
 
 function getModules(path) {
     return readdirSync(path)

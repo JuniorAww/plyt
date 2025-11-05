@@ -60,11 +60,7 @@ const resetAll = async ctx => {
     }
 }
 
-/* Как хранится опыт? */
 // user.level = [ уровень, сколько_нужно_опыта, сколько_всего_опыта ]
-// Почему array? Потому что шустрее и компактнее код, разобраться занимает ~ 10 секунд
-// Зачем хранить сколько нужно опыта? Чтобы безболезненно обновлять формулу позднее
-/* ================== */
 
 async function addExp(ctx) {
     const chat = await ctx.getInfo();
@@ -78,7 +74,7 @@ async function addExp(ctx) {
     
     if (ctx.text) {
         const len = ctx.text.length
-        givenExp = +(0.1 + len > 30 ? 0.4 : (0.4 / 30 * len)).toFixed(2)
+        givenExp = +(0.1 + len > 30 ? 0.6 : (0.6 / 30 * len)).toFixed(2)
     }
     else if (ctx.photo) givenExp = 0.3;
     else if (ctx.video) givenExp = 0.75;
@@ -101,7 +97,7 @@ async function addExp(ctx) {
 const vals = [1000,900,500,400,100,90,50,40,10,9,5,4,1];
 const syms = ["M","CM","D","CD","C","XC","L","XL","X","IX","V","IV","I"];
 
-function toRoman(num) {
+export function toRoman(num) {
     let result = '';
     for (let i = 0; i < vals.length; i++) {
         while (num >= vals[i]) { result += syms[i]; num -= vals[i]; }

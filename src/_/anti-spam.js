@@ -34,7 +34,6 @@ class AntiSpamModule extends Module {
     }
 }
 
-// WARNING засоряет глобальные переменные?
 const spamblock = {}
 const latestmsg = {}
 const aliveresp = {}

@@ -4,7 +4,7 @@ import { chats } from '../utils/data.js'
 import { bot } from '../index.js'
 
 class AITalkingModule extends Module {
-    description = "Общаемся в чатах"
+    description = "Бот-нейросеть в чаты"
     priority = 75
     
     async onMessage(ctx, next) {

@@ -13,7 +13,8 @@ class AITalkingModule extends Module {
     priority = 75
     
     async onMessage(ctx, next) {
-        next(); return;
+        next(); return; // DISABLED (audio python module required)
+        
         if (ctx.chat.id > 0) {
             const chat = await ctx.getInfo();
             
