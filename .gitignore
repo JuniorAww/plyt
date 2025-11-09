@@ -4,3 +4,5 @@ assets
 sync.sh
 .handlers
 data/*
+keygram
+.old

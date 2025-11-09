@@ -3,7 +3,6 @@
     "start": "bun src/index"
   },
   "dependencies": {
-    "dotenv": "^17.2.2",
-    "telegraf": "^4.16.3"
+    "dotenv": "^17.2.3"
   }
 }
