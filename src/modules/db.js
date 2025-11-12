@@ -54,16 +54,27 @@ const userMiddleware = async ctx => {
     }
     
     ctx.findChat = id => findChat(id)
+    ctx.findChats = id => findChats(id)
     ctx.findUser = id => findUser(id)
 }
 
+
 const findChat = async id => chats[id]
 const findUser = async id => users[id]
+const findChats = async func => {
+    const result = []
+    for (const id in chats) {
+        if (await func(chats[id], id)) result.push({ id, ...chats[id] })
+    }
+    return result
+}
+
 
 
 load()
-autosave(60)
+autosave(30)
 
+export const getChats = () => chats
 
 export default {
     priority: 1,

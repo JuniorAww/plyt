@@ -1,16 +1,9 @@
-import { Panel } from "../../keygram";
+﻿import { Panel } from "../../keygram";
 
 const linksEnabled = Panel().Callback("❌ Отключить", 'handleLinks', true)
 const linksDisabled = Panel().Callback("✅ Включить", 'handleLinks', true)
 const cancel = Panel().Callback("✖ Отменить", "cancelForm")
-const startKeyboard = Panel().Callback("🦊 Получить лисичку", "sendFox")
 const toMenuKeyboard = Panel().Callback("⬅ В меню", "onStart")
-
-// Start panel
-const onStart = async ctx => {
-    //if (ctx.isCallback) ctx.delete()
-    if (!ctx.isChat) return ctx.respond("<b>Добро пожаловать в главное меню!</b>", startKeyboard)
-}
 
 // User clicks link (https://.../bot?start=FM{group_id})
 const openChatForm = async ctx => {
@@ -39,7 +32,11 @@ const cancelForm = async ctx => {
 
 // Form enter, click or text
 const handleForm = async (ctx, param) => {
-    if (ctx.isGroup) return ctx.reply("Завершите взаимодействие в ЛС!")
+    if (ctx.isGroup) {
+        ctx.call('sendMessage', { chat_id: ctx.from.id, text: 'Действие отменено!' })
+        ctx.state = null;
+        return;
+    }
     const chat = (await ctx.findChat(ctx.state.chatId)) || {}
     const { title, forms } = chat
     
@@ -129,10 +126,10 @@ const handleFormEnd = async (ctx, forms) => {
 
 const formVoter = (chatId, form) => {
     const votes = Object.values(form.votes)
-    const adv = votes.filter(x => x === true).length
-    const dev  = votes.filter(x => x === false).length
-    return Panel().Callback(`✅ За (${adv})`, vote, chatId, form.id, true)
-                  .Callback(`❌ Против (${dev})`, vote, chatId, form.id, false)
+    const adv = votes.filter(x => x).length
+    const dev  = votes.filter(x => !x).length
+    return Panel().Callback(`✅ За (${adv})`, formVote, chatId, form.id, true)
+                  .Callback(`❌ Против (${dev})`, formVote, chatId, form.id, false)
 }
 
 const getText = (from, forms, form) => {
@@ -163,7 +160,7 @@ const handleLinks = async (ctx, swap) => {
     if (!ctx.isGroup) return;
     
     const chat = await ctx.getChat()
-    const me = await ctx.service.bot()
+    const me = await ctx.bot.me()
     
     const url = `https://t.me/${me.username}?start=FM${-ctx.chat.id}`
     const admin = await ctx.isAdmin()
@@ -171,9 +168,10 @@ const handleLinks = async (ctx, swap) => {
     if (admin && swap) {
         if (!chat.forms) chat.forms = {
             enabled: false,
-            version: btoa(Math.random().toString()).slice(0, 8),
+            version: btoa(Math.random().toString()).slice(4, 20),
             list: [],
-            steps: []
+            steps: [],
+            created: Math.floor(Date.now() / 1000)
         }
         chat.forms.enabled = !chat.forms.enabled
         ctx.answer("✅ Изменено!")
@@ -190,7 +188,7 @@ const handleLinks = async (ctx, swap) => {
     }
 }
 
-const vote = async (ctx, chatId, formId, adv) => {
+const formVote = async (ctx, chatId, formId, adv) => {
     const chat = await ctx.findChat(chatId)
     if (!chat || !chat.forms) return ctx.answer("Не удалось найти чат :(")
     const form = chat.forms.list.find(x => x.id === formId)
@@ -222,9 +220,8 @@ export default {
     priority: 5,
     init: bot => {
         bot.on("/start", openChatForm)
-        bot.on("/start", onStart)
         bot.on("/link", handleLinks)
         
-        bot.register(handleLinks, handleForm, handleFormEnd, vote, cancelForm, onStart)
+        bot.register(handleLinks, handleForm, handleFormEnd, formVote, cancelForm)
     }
 }

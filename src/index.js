@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { TelegramBot, Panel, ParserError } from "../keygram";
+import { TelegramBot, ParserError } from "../keygram";
 import { basename, extname } from 'node:path';
 import fs from 'node:fs';
 
@@ -37,5 +37,7 @@ function getModules() {
 console.log('Modules:', modules.map(m => m.name).join(', '))
 console.log(bot.print()) // printing middlewares
 
+bot.limit(0.5, ctx => ctx.isCallback && ctx.answer("Притормози!"))
 bot.setParser('HTML')
 bot.startPolling()
+
