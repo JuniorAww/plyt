@@ -36,19 +36,32 @@ const saveMessages = async (ctx) => {
     if (chat.talker.system) {
         if (chat.talker.messages.length >= 10) chat.talker.messages.splice(0, 1)
         const rx = await regex(ctx.bot)
-        const appeal = ctx.text && rx.test(ctx.text) || +ctx.update.reply_to_message?.from?.id === +ctx.bot.id;
+        let appeal = ctx.text && rx.test(ctx.text) || +ctx.update.reply_to_message?.from?.id === +ctx.bot.id;
         
         let msgContent = getContent(ctx);
         if (appeal) msgContent = msgContent.replace(rx, '')
         
         const name = ctx.from.first_name + (ctx.from.last_name ? (" " + ctx.from.last_name) : "");
         const from = name.length ? name : "безымянный"
-        const content = `${from} said: ${msgContent}`
+        const content = `${from}: ${msgContent}`
         chat.talker.messages.push([ 0, content ])
         
+        if (ctx.update.new_chat_members) {
+            appeal = 'spec';
+            if (chat.talker.messages.length >= 10) chat.talker.messages.splice(0, 1)
+            chat.talker.messages.push([ 2, welcome + ctx.update.new_chat_members.map(x => x.first_name).join(', ') ])
+        }
+        else if (ctx.update.left_chat_member) {
+            appeal = 'spec';
+            if (chat.talker.messages.length >= 10) chat.talker.messages.splice(0, 1)
+            chat.talker.messages.push([ 2, goodbye + ctx.update.left_chat_member.first_name ])
+        }
+        
         if (appeal) {
-            if (ctx.text && ctx.text[0] !== '/') {
-                if (generating) ctx.react("👎")
+            if (ctx.text?.[0] !== '/') {
+                if (generating) {
+                    if (appeal !== 'spec') ctx.react("👎")
+                }
                 else {
                     const [ message_id, content ] = await getResponse(ctx, chat.talker)
                     generating = false;
@@ -63,6 +76,9 @@ const saveMessages = async (ctx) => {
         }
     }
 }
+
+const welcome = "There's a new member in the chat! Give them a warm welcome! Names: "
+const goodbye = "Member have left the chat. Say goodbye to him heartily. Name: "
 
 let currentRegex
 const regex = async (bot) => {
@@ -81,6 +97,8 @@ const getContent = ctx => {
     else if (cnt.document) return "[файл, который ты не сможешь смотреть]"
     else if (cnt.voice) return "[голосовое сообщение, который ты не сможешь смотреть]"
     else if (cnt.audio) return "[файл музыки, который ты не сможешь услышать]"
+    else if (cnt.new_chat_members) return "[joined the chat]"
+    else if (cnt.left_chat_member) return "[left the chat]"
     else return "[сообщение, которое ты не сможешь понять]"
 }
 
@@ -127,14 +145,26 @@ const talkerInput = async (ctx) => {
 
 const brokenText = "🌟 Упс! Я что-то сломался..."
 
+const hardcoded = { role: 'system', content: `
+Ты — участник группового чата.
+Все предыдущие сообщения даются только для контекста.
+Не пересказывай и не цитируй историю.
+Отвечай только на последнее сообщение, если оно не от ассистента.
+Формат сообщений: "USERNAME: MESSAGE".
+Отвечай от своего имени, не от имени других участников.
+`.trim() }
+
 const getResponse = async (ctx, talker) => {
     const messages = [
         { role: 'system', content: talker.system },
+        hardcoded,
         ...talker.messages.map(([ role, content ]) => ({
-            role: role ? 'assistant' : 'user',
+            role: role === 1 ? 'assistant' : role === 2 ? 'system' : 'user',
             content
         }))
     ]
+    
+    console.log('Generating...', messages.map((x, i) => i + '. ' + x.content).join('\n'))
     
     const response = await fetch("http://ollama:11434/api/chat", {
         method: "POST",
@@ -165,8 +195,6 @@ const getResponse = async (ctx, talker) => {
         }
         else await ctx.call('editMessageText', { message_id, text: fullResponse })
     }, 2500)
-    
-    console.log('Generating...')
 
     for await (const chunk of response.body) {
         const decodedChunk = decoder.decode(chunk);
@@ -183,7 +211,7 @@ const getResponse = async (ctx, talker) => {
                 if (parsed.done) {
                     clearInterval(edit)
                     done = true;
-                    return [ message_id, fullResponse ];
+                    return [ message_id, fullResponse.trim() ];
                 }
             } catch (e) {
                 console.warn("Couldn't parse!", line);
@@ -194,11 +222,15 @@ const getResponse = async (ctx, talker) => {
     return [];
 }
 
+
+
+
 export default {
     priority: 50,
     init: bot => {
         //bot.text(/^\/ask/, ask)
         bot.use(saveMessages)
+        bot.on('sticker', ctx => console.log(ctx.update.sticker))
         
         bot.register(talkerSettings, talkerSystemText, resetSystemText, talkerInput)
     }
