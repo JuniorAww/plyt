@@ -1,4 +1,4 @@
-import { Panel, Callback, Pagination, Normalize } from "../../keygram";
+import { Panel, Callback, Pagination, Normalize } from "keygram";
 
 const talkerSettings = async (ctx, groupId, page) => {
     if (ctx.state.allow) ctx.state = {}
@@ -69,7 +69,7 @@ const saveMessages = async (ctx) => {
                         if (chat.talker.messages.length >= 10) chat.talker.messages.splice(0, 1)
                         chat.talker.messages.push([ 1, content ])
                         if (message_id) return await ctx.call('editMessageText', { message_id, text: content })
-                        else return await ctx.reply(content);
+                        else return await ctx.call('sendMessage', { text: content, reply_parameters: { message_id: ctx.update.message_id } });
                     }
                 }
             }
@@ -150,8 +150,8 @@ const hardcoded = { role: 'system', content: `
 Все предыдущие сообщения даются только для контекста.
 Не пересказывай и не цитируй историю.
 Отвечай только на последнее сообщение, если оно не от ассистента.
-Формат сообщений: "USERNAME: MESSAGE".
-Отвечай от своего имени, не от имени других участников.
+Формат сообщений от пользователей: "USERNAME: MESSAGE".
+Никогда не пиши своё имя в ответ. Отвечай без указания своего имени.
 `.trim() }
 
 const getResponse = async (ctx, talker) => {
@@ -189,7 +189,7 @@ const getResponse = async (ctx, talker) => {
         if (!fullResponse.length) return;
         if (done) return;
         if (!message_id) {
-            const { result: message } = await ctx.reply(fullResponse)
+            const { result: message } = await ctx.call('sendMessage', { text: fullResponse, reply_parameters: { message_id: ctx.update.message_id } })
             message_id = message.message_id
             if (done) ctx.call('deleteMessage', { message_id })
         }

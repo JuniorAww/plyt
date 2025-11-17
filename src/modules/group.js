@@ -1,4 +1,4 @@
-﻿import { Panel, Callback, Pagination, Normalize } from "../../keygram";
+﻿import { Panel, Callback, Pagination, Normalize } from "keygram";
 import { getChats } from './db';
 import { format, finishPoll } from './polls'
 
@@ -17,6 +17,8 @@ const groupsData = (ctx, page) => ctx.findChats(async (chat, id) => {
 const groupsKeys = (_, groups, page) => Panel().Add(
     groups.map(group => [ Callback("Группа " + group.title, openGroup, group.id, page) ])
 )
+
+const toMenu = () => Panel().Callback("🌟 В главное меню", 'onStart')
 
 /* Pagination №2 */
 /*  ГОЛОСОВАНИЯ  */
@@ -55,7 +57,7 @@ const formsKeys = (ctx, forms, page) => Panel().Add(
 
 const backKeys = (ctx, forms, page, groupId) => [ Callback("⬅ Обратно", "openGroup", groupId) ]
 
-const groupsPages = Pagination("groups").Text(groupsText).Data(groupsData).Keys(groupsKeys).PageSize(4)
+const groupsPages = Pagination("groups").Text(groupsText).Data(groupsData).Keys(groupsKeys).AfterKeys(toMenu).PageSize(4)
 const pollsPages = Pagination("polls").Text(pollsText).Data(getPolls).Keys(pollsKeys).AfterKeys(backKeys).PageSize(4)
 const formsPages = Pagination("forms").Text(formsText).Data(getForms).Keys(formsKeys).AfterKeys(backKeys).PageSize(4)
 
@@ -114,7 +116,7 @@ const openPoll = async (ctx, groupId, pollId, page) => {
     
     if (!poll.finish) {
         const left = poll.time - (Date.now() / 1000 - poll.created)
-        text += "Голосование завершится через <b>" + format(Math.min(5, left)) + "</b>"
+        text += "Голосование завершится через <b>" + format(Math.max(5, left)) + "</b>"
     }
     else {
         const estimated = Math.ceil(Date.now() / 1000 - poll.finish)
@@ -190,6 +192,6 @@ export default {
         
         fetchAdmins(bot);
         
-        bot.register(listGroups, openGroup, openPolls, openPoll, openForms, adminFinishPoll)
+        bot.register(listGroups, openGroup, openPolls, openPoll, openForms, adminFinishPoll, adminDeletePollConfirm)
     }
 }

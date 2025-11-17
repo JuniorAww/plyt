@@ -1,4 +1,4 @@
-﻿import { Panel, Callback, Text } from "../../keygram";
+﻿import { Panel, Callback, Text } from "keygram";
 import { getChats } from './db'
 
 const startPoll = async ctx => {

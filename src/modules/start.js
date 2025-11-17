@@ -1,17 +1,28 @@
-﻿import { Panel, Callback } from "../../keygram";
+﻿import { Panel, Keyboard, Callback } from "keygram";
 
-const startKeyboard = Panel().Callback("⚙ Управляемые группы", "listGroups")
-                             .Row()
-                             .Callback("🦊 Получить лисичку", "sendFox")
+const startPanel = Panel().Callback("⚙ Управляемые группы", "listGroups")
+                          .Row()
+                          .Callback("🦊 Получить лисичку", "sendFox")
 
 // Start panel
-const onStart = async ctx => {
+export const onStart = async (ctx, reply) => {
+    if (ctx.isGroup) return;
     const text = `🌟 <b>Приветик, ${ctx.from.first_name}</b>!`
                + `\nЯ - Плутовка, являюсь роболисой и помощницей для ваших чатов.`
                + `\nЧто бы вы хотели?`
     if (!stickers.length) await retrieveStickers(ctx.bot)
-    await ctx.call('sendSticker', pickSticker())
-    if (!ctx.isChat) await ctx.respond(text, startKeyboard)
+    if (!ctx.isCallback) await ctx.call('sendSticker', stickerParams())
+    if (!reply) return ctx.respond(text, startPanel)
+    else return ctx.reply(text, startPanel)
+}
+
+const startKeyboard = await Keyboard().Button("🌟 Главное меню", onStart).Build()
+
+const stickerParams = () => {
+    return {
+        ...pickSticker(),
+        reply_markup: startKeyboard
+    }
 }
 
 let stickers = []

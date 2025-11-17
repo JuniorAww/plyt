@@ -3,6 +3,7 @@
     "start": "bun src/index"
   },
   "dependencies": {
-    "dotenv": "^17.2.3"
+    "dotenv": "^17.2.3",
+    "keygram": "^0.2.12"
   }
 }

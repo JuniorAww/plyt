@@ -79,7 +79,7 @@ export const getChats = () => chats
 export default {
     priority: 1,
     init: bot => {
-        bot.useAlways(userMiddleware)
+        bot.alwaysUse(userMiddleware)
         bot.states.save = (ctx, new_state) => {
             users[ctx.from.id].state = new_state
         }

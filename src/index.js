@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { TelegramBot, ParserError } from "../keygram";
+import { TelegramBot, ParserError } from "keygram";
 import { basename, extname } from 'node:path';
 import fs from 'node:fs';
 

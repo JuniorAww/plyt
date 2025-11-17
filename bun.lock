@@ -1,13 +1,17 @@
 {
   "lockfileVersion": 1,
+  "configVersion": 0,
   "workspaces": {
     "": {
       "dependencies": {
         "dotenv": "^17.2.3",
+        "keygram": "^0.2.12",
       },
     },
   },
   "packages": {
     "dotenv": ["dotenv@17.2.3", "", {}, "sha512-JVUnt+DUIzu87TABbhPmNfVdBDt18BLOWjMUFJMSi/Qqg7NTYtabbvSNJGOJ7afbRuv9D/lngizHtP7QyLQ+9w=="],
+
+    "keygram": ["keygram@0.2.12", "", {}, "sha512-K8aAnh7pQWf5fuID5RGZLE+PFoL525DBpBBM2YK/q9D0TGhl7FFZC/FESK9Z5X/lKgxKsbpPJE641NOuHILm6g=="],
   }
 }

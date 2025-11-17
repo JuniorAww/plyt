@@ -1,4 +1,4 @@
-﻿import { Panel } from "../../keygram";
+﻿import { Panel } from "keygram";
 
 const linksEnabled = Panel().Callback("❌ Отключить", 'handleLinks', true)
 const linksDisabled = Panel().Callback("✅ Включить", 'handleLinks', true)
